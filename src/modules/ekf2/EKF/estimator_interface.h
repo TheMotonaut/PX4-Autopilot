@@ -72,6 +72,7 @@
 #endif // CONFIG_EKF2_RANGE_FINDER
 
 #include <lib/atmosphere/atmosphere.h>
+#include <lib/lat_lon_alt/lat_lon_alt.hpp>
 #include <matrix/math.hpp>
 #include <mathlib/mathlib.h>
 #include <mathlib/math/filter/AlphaFilter.hpp>
@@ -187,8 +188,9 @@ public:
 	// get vehicle landed status data
 	bool get_in_air_status() const { return _control_status.flags.in_air; }
 
-	// get wind estimation status
-	bool get_wind_status() const { return _control_status.flags.wind; }
+#if defined(CONFIG_EKF2_WIND)
+	bool get_wind_status() const { return _control_status.flags.wind || _external_wind_init; }
+#endif // CONFIG_EKF2_WIND
 
 	// set vehicle is fixed wing status
 	void set_is_fixed_wing(bool is_fixed_wing) { _control_status.flags.fixed_wing = is_fixed_wing; }
@@ -238,9 +240,13 @@ public:
 	const matrix::Quatf &getQuaternion() const { return _output_predictor.getQuaternion(); }
 	float getUnaidedYaw() const { return _output_predictor.getUnaidedYaw(); }
 	Vector3f getVelocity() const { return _output_predictor.getVelocity(); }
-	const Vector3f &getVelocityDerivative() const { return _output_predictor.getVelocityDerivative(); }
+
+	// get the mean velocity derivative in earth frame since last reset (see `resetVelocityDerivativeAccumulation()`)
+	Vector3f getVelocityDerivative() const { return _output_predictor.getVelocityDerivative(); }
+	void resetVelocityDerivativeAccumulation() { return _output_predictor.resetVelocityDerivativeAccumulation(); }
 	float getVerticalPositionDerivative() const { return _output_predictor.getVerticalPositionDerivative(); }
-	Vector3f getPosition() const { return _output_predictor.getPosition(); }
+	Vector3f getPosition() const;
+	LatLonAlt getLatLonAlt() const { return _output_predictor.getLatLonAlt(); }
 	const Vector3f &getOutputTrackingError() const { return _output_predictor.getOutputTrackingError(); }
 
 #if defined(CONFIG_EKF2_MAGNETOMETER)
@@ -249,7 +255,7 @@ public:
 	// At the next startup, set param.mag_declination_deg to the value saved
 	bool get_mag_decl_deg(float &val) const
 	{
-		if (_NED_origin_initialised && (_params.mag_declination_source & GeoDeclinationMask::SAVE_GEO_DECL)) {
+		if (PX4_ISFINITE(_wmm_declination_rad) && (_params.mag_declination_source & GeoDeclinationMask::SAVE_GEO_DECL)) {
 			val = math::degrees(_wmm_declination_rad);
 			return true;
 
@@ -260,7 +266,7 @@ public:
 
 	bool get_mag_inc_deg(float &val) const
 	{
-		if (_NED_origin_initialised) {
+		if (PX4_ISFINITE(_wmm_inclination_rad)) {
 			val = math::degrees(_wmm_inclination_rad);
 			return true;
 
@@ -306,9 +312,9 @@ public:
 	const imuSample &get_imu_sample_delayed() const { return _imu_buffer.get_oldest(); }
 	const uint64_t &time_delayed_us() const { return _time_delayed_us; }
 
-	const bool &global_origin_valid() const { return _NED_origin_initialised; }
-	const MapProjection &global_origin() const { return _pos_ref; }
-	float getEkfGlobalOriginAltitude() const { return PX4_ISFINITE(_gps_alt_ref) ? _gps_alt_ref : 0.f; }
+	bool global_origin_valid() const { return _local_origin_lat_lon.isInitialized(); }
+	const MapProjection &global_origin() const { return _local_origin_lat_lon; }
+	float getEkfGlobalOriginAltitude() const { return PX4_ISFINITE(_local_origin_alt) ? _local_origin_alt : 0.f; }
 
 	OutputPredictor &output_predictor() { return _output_predictor; };
 
@@ -378,11 +384,8 @@ protected:
 	bool _initialised{false};      // true if the ekf interface instance (data buffering) is initialized
 
 	// Variables used to publish the WGS-84 location of the EKF local NED origin
-	bool _NED_origin_initialised{false};
-	MapProjection _pos_ref{}; // Contains WGS-84 position latitude and longitude of the EKF origin
-	float _gps_alt_ref{NAN};		///< WGS-84 height (m)
-	float _gpos_origin_eph{0.0f}; // horizontal position uncertainty of the global origin
-	float _gpos_origin_epv{0.0f}; // vertical position uncertainty of the global origin
+	MapProjection _local_origin_lat_lon{};
+	float _local_origin_alt{NAN};
 
 #if defined(CONFIG_EKF2_GNSS)
 	RingBuffer<gnssSample> *_gps_buffer {nullptr};
@@ -463,6 +466,8 @@ protected:
 	float _mag_inclination{NAN};
 	float _mag_strength{NAN};
 #endif // CONFIG_EKF2_MAGNETOMETER
+
+	bool _external_wind_init{false};
 
 	// this is the current status of the filter control modes
 	filter_control_status_u _control_status{};

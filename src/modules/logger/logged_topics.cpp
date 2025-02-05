@@ -53,11 +53,11 @@ void LoggedTopics::add_default_topics()
 	add_optional_topic("autotune_attitude_control_status", 100);
 	add_optional_topic("camera_capture");
 	add_optional_topic("camera_trigger");
-	add_optional_topic("can_interface_status", 10);
 	add_topic("cellular_status", 200);
 	add_topic("commander_state");
 	add_topic("config_overrides");
 	add_topic("cpuload");
+	add_topic("distance_sensor_mode_change_request");
 	add_optional_topic("external_ins_attitude");
 	add_optional_topic("external_ins_global_position");
 	add_optional_topic("external_ins_local_position");
@@ -103,10 +103,14 @@ void LoggedTopics::add_default_topics()
 	add_optional_topic("px4io_status");
 	add_topic("radio_status");
 	add_optional_topic("rover_ackermann_guidance_status", 100);
+	add_optional_topic("rover_ackermann_setpoint", 100);
 	add_optional_topic("rover_ackermann_status", 100);
 	add_optional_topic("rover_differential_guidance_status", 100);
 	add_optional_topic("rover_differential_setpoint", 100);
 	add_optional_topic("rover_differential_status", 100);
+	add_optional_topic("rover_mecanum_guidance_status", 100);
+	add_optional_topic("rover_mecanum_setpoint", 100);
+	add_optional_topic("rover_mecanum_status", 100);
 	add_topic("rtl_time_estimate", 1000);
 	add_topic("rtl_status", 2000);
 	add_optional_topic("sensor_airflow", 100);
@@ -246,6 +250,10 @@ void LoggedTopics::add_default_topics()
 	add_optional_topic_multi("yaw_estimator_status");
 
 #endif /* CONFIG_ARCH_BOARD_PX4_SITL */
+
+#ifdef CONFIG_BOARD_UAVCAN_INTERFACES
+	add_topic_multi("can_interface_status", 100, CONFIG_BOARD_UAVCAN_INTERFACES);
+#endif
 }
 
 void LoggedTopics::add_high_rate_topics()
@@ -286,6 +294,7 @@ void LoggedTopics::add_estimator_replay_topics()
 
 	// current EKF2 subscriptions
 	add_topic("airspeed");
+	add_topic("airspeed_validated");
 	add_topic("vehicle_optical_flow");
 	add_topic("sensor_combined");
 	add_topic("sensor_selection");
@@ -318,7 +327,9 @@ void LoggedTopics::add_sensor_comparison_topics()
 void LoggedTopics::add_vision_and_avoidance_topics()
 {
 	add_topic("collision_constraints");
+	add_topic_multi("distance_sensor");
 	add_topic("obstacle_distance_fused");
+	add_topic("obstacle_distance");
 	add_topic("vehicle_mocap_odometry", 30);
 	add_topic("vehicle_trajectory_waypoint", 200);
 	add_topic("vehicle_trajectory_waypoint_desired", 200);

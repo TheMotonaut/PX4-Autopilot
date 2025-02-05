@@ -73,6 +73,8 @@ public:
 	virtual void on_activation() override;
 	virtual void on_active() override;
 
+	virtual bool isLanding();
+
 protected:
 
 	/**
@@ -321,6 +323,7 @@ protected:
 	 */
 	void setMissionIndex(int32_t index);
 
+
 	bool _is_current_planned_mission_item_valid{false};	/**< Flag indicating if the currently loaded mission item is valid*/
 	bool _mission_has_been_activated{false};		/**< Flag indicating if the mission has been activated*/
 	bool _mission_checked{false};				/**< Flag indicating if the mission has been checked by the mission validator*/
@@ -480,8 +483,8 @@ private:
 	mission_item_s _last_camera_trigger_item {};
 	mission_item_s _last_speed_change_item {};
 
-	DEFINE_PARAMETERS(
-		(ParamFloat<px4::params::MIS_DIST_1WP>) _param_mis_dist_1wp,
+	DEFINE_PARAMETERS_CUSTOM_PARENT(
+		ModuleParams,
 		(ParamInt<px4::params::MIS_MNT_YAW_CTL>) _param_mis_mnt_yaw_ctl
 	)
 

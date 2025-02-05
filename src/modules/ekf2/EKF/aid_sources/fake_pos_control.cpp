@@ -63,17 +63,17 @@ void Ekf::controlFakePosFusion()
 			obs_var(0) = obs_var(1) = sq(0.5f);
 		}
 
-		const Vector2f position(_last_known_pos);
+		const Vector2f innovation = (_gpos - _last_known_gpos).xy();
 
 		const float innov_gate = 3.f;
 
 		updateAidSourceStatus(aid_src,
 				      _time_delayed_us,
-				      position,                                           // observation
-				      obs_var,                                            // observation variance
-				      Vector2f(_state.pos) - position,                    // innovation
-				      Vector2f(getStateVariance<State::pos>()) + obs_var, // innovation variance
-				      innov_gate);                                        // innovation gate
+				      Vector2f(_gpos.latitude_deg(), _gpos.longitude_deg()), // observation
+				      obs_var,                                               // observation variance
+				      innovation,                       // innovation
+				      Vector2f(getStateVariance<State::pos>()) + obs_var,    // innovation variance
+				      innov_gate);                                           // innovation gate
 
 		const bool enable_valid_fake_pos = _control_status.flags.constant_pos || _control_status.flags.vehicle_at_rest;
 		const bool enable_fake_pos = !enable_valid_fake_pos
@@ -95,7 +95,7 @@ void Ekf::controlFakePosFusion()
 void Ekf::resetFakePosFusion()
 {
 	ECL_INFO("reset fake position fusion");
-	_last_known_pos.xy() = _state.pos.xy();
+	_last_known_gpos.setLatLon(_gpos);
 
 	resetHorizontalPositionToLastKnown();
 	resetHorizontalVelocityToZero();
@@ -108,12 +108,12 @@ bool Ekf::runFakePosStateMachine(const bool enable_conditions_passing, bool stat
 {
 	if (status_flag) {
 		if (enable_conditions_passing) {
-			if (!aid_src.innovation_rejected
-			    && fuseDirectStateMeasurement(aid_src.innovation[0], aid_src.innovation_variance[0], aid_src.observation_variance[0],
-							  State::pos.idx + 0)
-			    && fuseDirectStateMeasurement(aid_src.innovation[1], aid_src.innovation_variance[1], aid_src.observation_variance[1],
-							  State::pos.idx + 1)
-			   ) {
+			if (!aid_src.innovation_rejected) {
+				for (unsigned i = 0; i < 2; i++) {
+					fuseDirectStateMeasurement(aid_src.innovation[i], aid_src.innovation_variance[i], aid_src.observation_variance[i],
+								   State::pos.idx + i);
+				}
+
 				aid_src.fused = true;
 				aid_src.time_last_fuse = _time_delayed_us;
 			}

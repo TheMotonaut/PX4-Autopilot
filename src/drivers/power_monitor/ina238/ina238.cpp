@@ -80,6 +80,7 @@ INA238::INA238(const I2CSPIDriverConfig &config, int battery_index) :
 	_battery.setConnected(false);
 	_battery.updateVoltage(0.f);
 	_battery.updateCurrent(0.f);
+	_battery.updateTemperature(0.f);
 	_battery.updateAndPublishBatteryStatus(hrt_absolute_time());
 }
 
@@ -159,6 +160,8 @@ int INA238::Reset()
 
 	int ret = PX4_ERROR;
 
+	_retries = 3;
+
 	if (RegisterWrite(Register::CONFIG, (uint16_t)(ADC_RESET_BIT)) != PX4_OK) {
 		return ret;
 	}
@@ -224,9 +227,21 @@ int INA238::collect()
 	bool success{true};
 	int16_t bus_voltage{0};
 	int16_t current{0};
+	int16_t temperature{0};
 
 	success = (RegisterRead(Register::VS_BUS, (uint16_t &)bus_voltage) == PX4_OK);
 	success = success && (RegisterRead(Register::CURRENT, (uint16_t &)current) == PX4_OK);
+	success = success && (RegisterRead(Register::DIETEMP, (uint16_t &)temperature) == PX4_OK);
+
+	if (success) {
+		_battery.updateVoltage(static_cast<float>(bus_voltage * INA238_VSCALE));
+		_battery.updateCurrent(static_cast<float>(current * _current_lsb));
+		_battery.updateTemperature(static_cast<float>(temperature * INA238_TSCALE));
+
+		_battery.setConnected(success);
+
+		_battery.updateAndPublishBatteryStatus(hrt_absolute_time());
+	}
 
 	if (!success || hrt_elapsed_time(&_last_config_check_timestamp) > 100_ms) {
 		// check configuration registers periodically or immediately following any failure
@@ -239,18 +254,12 @@ int INA238::collect()
 			PX4_DEBUG("register check failed");
 			perf_count(_bad_register_perf);
 			success = false;
+
+			_battery.setConnected(success);
+
+			_battery.updateAndPublishBatteryStatus(hrt_absolute_time());
 		}
 	}
-
-	if (!success) {
-		PX4_DEBUG("error reading from sensor");
-		bus_voltage = current = 0;
-	}
-
-	_battery.setConnected(success);
-	_battery.updateVoltage(static_cast<float>(bus_voltage * INA238_VSCALE));
-	_battery.updateCurrent(static_cast<float>(current * _current_lsb));
-	_battery.updateAndPublishBatteryStatus(hrt_absolute_time());
 
 	perf_end(_sample_perf);
 
@@ -258,6 +267,8 @@ int INA238::collect()
 		return PX4_OK;
 
 	} else {
+		PX4_DEBUG("error reading from sensor");
+
 		return PX4_ERROR;
 	}
 }
@@ -309,6 +320,7 @@ void INA238::RunImpl()
 		_battery.setConnected(false);
 		_battery.updateVoltage(0.f);
 		_battery.updateCurrent(0.f);
+		_battery.updateTemperature(0.f);
 		_battery.updateAndPublishBatteryStatus(hrt_absolute_time());
 
 		if (init() != PX4_OK) {

@@ -92,6 +92,13 @@ public:
 	void on_active() override;
 
 	/**
+	 * @brief on inactive
+	 * Poll required topics also when incative for rtl time estimate.
+	 *
+	 */
+	void on_inactive() override;
+
+	/**
 	 * @brief Calculate the estimated time needed to return to launch.
 	 *
 	 * @return estimated time to return to launch.
@@ -102,6 +109,8 @@ public:
 	void setRtlAlt(float alt) {_rtl_alt = alt;};
 
 	void setRtlPosition(PositionYawSetpoint position, loiter_point_s loiter_pos);
+
+	bool isLanding() { return (_rtl_state != RTLState::IDLE) && (_rtl_state >= RTLState::LOITER_DOWN);};
 
 private:
 	/**
@@ -121,6 +130,12 @@ private:
 	} _rtl_state{RTLState::IDLE}; /*< Current state in the state machine.*/
 
 private:
+	/**
+	 * @brief Update the RTL state machine.
+	 *
+	 */
+	void _updateRtlState();
+
 	/**
 	 * @brief Set the return to launch control setpoint.
 	 *

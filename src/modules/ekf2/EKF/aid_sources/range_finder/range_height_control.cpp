@@ -37,6 +37,7 @@
  */
 
 #include "ekf.h"
+#include "ekf_derivation/generated/compute_hagl_h.h"
 #include "ekf_derivation/generated/compute_hagl_innov_var.h"
 
 void Ekf::controlRangeHaglFusion(const imuSample &imu_sample)
@@ -77,7 +78,7 @@ void Ekf::controlRangeHaglFusion(const imuSample &imu_sample)
 			}
 
 		} else {
-			// If we are supposed to be using range finder data as the primary height sensor, have bad range measurements
+			// If we are supposed to be using range finder data but have bad range measurements
 			// and are on the ground, then synthesise a measurement at the expected on ground value
 			if (!_control_status.flags.in_air
 			    && _range_sensor.isRegularlySendingData()
@@ -138,6 +139,7 @@ void Ekf::controlRangeHaglFusion(const imuSample &imu_sample)
 
 					if (!_control_status.flags.opt_flow_terrain && aid_src.innovation_rejected) {
 						resetTerrainToRng(aid_src);
+						resetAidSourceStatusZeroInnovation(aid_src);
 					}
 
 				} else if (do_range_aid) {
@@ -147,8 +149,9 @@ void Ekf::controlRangeHaglFusion(const imuSample &imu_sample)
 					_height_sensor_ref = HeightSensor::RANGE;
 
 					_information_events.flags.reset_hgt_to_rng = true;
-					resetVerticalPositionTo(-aid_src.observation, aid_src.observation_variance);
+					resetAltitudeTo(aid_src.observation, aid_src.observation_variance);
 					_state.terrain = 0.f;
+					resetAidSourceStatusZeroInnovation(aid_src);
 					_control_status.flags.rng_hgt = true;
 					stopRngTerrFusion();
 
@@ -162,6 +165,7 @@ void Ekf::controlRangeHaglFusion(const imuSample &imu_sample)
 
 					if (!_control_status.flags.opt_flow_terrain && aid_src.innovation_rejected) {
 						resetTerrainToRng(aid_src);
+						resetAidSourceStatusZeroInnovation(aid_src);
 					}
 				}
 			}
@@ -179,7 +183,8 @@ void Ekf::controlRangeHaglFusion(const imuSample &imu_sample)
 					ECL_WARN("%s height fusion reset required, all height sources failing", HGT_SRC_NAME);
 
 					_information_events.flags.reset_hgt_to_rng = true;
-					resetVerticalPositionTo(-(aid_src.observation - _state.terrain));
+					resetAltitudeTo(aid_src.observation - _state.terrain);
+					resetAidSourceStatusZeroInnovation(aid_src);
 
 					// reset vertical velocity if no valid sources available
 					if (!isVerticalVelocityAidingActive()) {
@@ -197,6 +202,7 @@ void Ekf::controlRangeHaglFusion(const imuSample &imu_sample)
 
 					} else {
 						resetTerrainToRng(aid_src);
+						resetAidSourceStatusZeroInnovation(aid_src);
 					}
 				}
 
@@ -217,6 +223,7 @@ void Ekf::controlRangeHaglFusion(const imuSample &imu_sample)
 				} else {
 					if (aid_src.innovation_rejected) {
 						resetTerrainToRng(aid_src);
+						resetAidSourceStatusZeroInnovation(aid_src);
 					}
 
 					_control_status.flags.rng_terrain = true;
@@ -270,13 +277,25 @@ float Ekf::getRngVar() const
 
 void Ekf::resetTerrainToRng(estimator_aid_source1d_s &aid_src)
 {
-	const float new_terrain = _state.pos(2) + aid_src.observation;
-	const float delta_terrain = new_terrain - _state.terrain;
+	// Since the distance is not a direct observation of the terrain state but is based
+	// on the height state, a reset should consider the height uncertainty. This can be
+	// done by manipulating the Kalman gain to inject all the innovation in the terrain state
+	// and create the correct correlation with the terrain state with a covariance update.
+	P.uncorrelateCovarianceSetVariance<State::terrain.dof>(State::terrain.idx, 0.f);
 
-	_state.terrain = new_terrain;
-	P.uncorrelateCovarianceSetVariance<State::terrain.dof>(State::terrain.idx, aid_src.observation_variance);
+	const float old_terrain = _state.terrain;
+
+	VectorState H;
+	sym::ComputeHaglH(&H);
+
+	VectorState K;
+	K(State::terrain.idx) = 1.f; // innovation is forced into the terrain state to create a "reset"
+
+	measurementUpdate(K, H, aid_src.observation_variance, aid_src.innovation);
 
 	// record the state change
+	const float delta_terrain = _state.terrain - old_terrain;
+
 	if (_state_reset_status.reset_count.hagl == _state_reset_count_prev.hagl) {
 		_state_reset_status.hagl_change = delta_terrain;
 
@@ -286,7 +305,6 @@ void Ekf::resetTerrainToRng(estimator_aid_source1d_s &aid_src)
 	}
 
 	_state_reset_status.reset_count.hagl++;
-
 
 	aid_src.time_last_fuse = _time_delayed_us;
 }

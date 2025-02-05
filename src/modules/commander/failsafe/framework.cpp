@@ -170,6 +170,10 @@ void FailsafeBase::removeActions(ClearCondition condition)
 
 void FailsafeBase::notifyUser(uint8_t user_intended_mode, Action action, Action delayed_action, Cause cause)
 {
+	if (_on_notify_user_cb) {
+		_on_notify_user_cb(_on_notify_user_arg);
+	}
+
 	int delay_s = (_current_delay + 500_ms) / 1_s;
 	PX4_DEBUG("User notification: failsafe triggered (action=%i, delayed_action=%i, cause=%i, delay=%is)", (int)action,
 		  (int)delayed_action, (int)cause, delay_s);
@@ -603,6 +607,15 @@ void FailsafeBase::getSelectedAction(const State &state, const failsafe_flags_s 
 	if (returned_state.updated_user_intended_mode == vehicle_status_s::NAVIGATION_STATE_AUTO_LAND) {
 		if ((selected_action == Action::RTL || returned_state.delayed_action == Action::RTL)
 		    && modeCanRun(status_flags, vehicle_status_s::NAVIGATION_STATE_AUTO_LAND)) {
+			selected_action = Action::Warn;
+			returned_state.delayed_action = Action::None;
+		}
+	}
+
+	// If already in RTL, do not go into RTL again (would cause a Hold delay first, then re-start RTL)
+	if (returned_state.updated_user_intended_mode == vehicle_status_s::NAVIGATION_STATE_AUTO_RTL) {
+		if ((selected_action == Action::RTL || returned_state.delayed_action == Action::RTL)
+		    && modeCanRun(status_flags, vehicle_status_s::NAVIGATION_STATE_AUTO_RTL)) {
 			selected_action = Action::Warn;
 			returned_state.delayed_action = Action::None;
 		}

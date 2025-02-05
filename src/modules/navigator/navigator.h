@@ -57,13 +57,17 @@
 
 #include "GeofenceBreachAvoidance/geofence_breach_avoidance.h"
 
+#if CONFIG_NAVIGATOR_ADSB
 #include <lib/adsb/AdsbConflict.h>
+#endif // CONFIG_NAVIGATOR_ADSB
 #include <lib/perf/perf_counter.h>
+#include <px4_platform_common/events.h>
 #include <px4_platform_common/module.h>
 #include <px4_platform_common/module_params.h>
 #include <uORB/Publication.hpp>
 #include <uORB/Subscription.hpp>
 #include <uORB/SubscriptionInterval.hpp>
+#include <uORB/topics/distance_sensor_mode_change_request.h>
 #include <uORB/topics/geofence_result.h>
 #include <uORB/topics/gimbal_manager_set_attitude.h>
 #include <uORB/topics/home_position.h>
@@ -135,14 +139,14 @@ public:
 	 */
 	void publish_vehicle_cmd(vehicle_command_s *vcmd);
 
+#if CONFIG_NAVIGATOR_ADSB
 	/**
 	 * Check nearby traffic for potential collisions
 	 */
 	void check_traffic();
-
 	void take_traffic_conflict_action();
-
 	void run_fake_traffic();
+#endif // CONFIG_NAVIGATOR_ADSB
 
 	/**
 	 * Setters
@@ -277,7 +281,7 @@ public:
 	void release_gimbal_control();
 	void set_gimbal_neutral();
 
-	void calculate_breaking_stop(double &lat, double &lon);
+	void preproject_stop_point(double &lat, double &lon);
 
 	void stop_capturing_images();
 	void disable_camera_trigger();
@@ -316,6 +320,7 @@ private:
 	uORB::Publication<vehicle_command_s>		_vehicle_cmd_pub{ORB_ID(vehicle_command)};
 	uORB::Publication<vehicle_roi_s>		_vehicle_roi_pub{ORB_ID(vehicle_roi)};
 	uORB::Publication<mode_completed_s> _mode_completed_pub{ORB_ID(mode_completed)};
+	uORB::PublicationData<distance_sensor_mode_change_request_s> _distance_sensor_mode_change_request_pub{ORB_ID(distance_sensor_mode_change_request)};
 
 	orb_advert_t	_mavlink_log_pub{nullptr};	/**< the uORB advert to send messages over mavlink */
 
@@ -335,6 +340,7 @@ private:
 	position_setpoint_triplet_s			_reposition_triplet{};	/**< triplet for non-mission direct position command */
 	position_setpoint_triplet_s			_takeoff_triplet{};	/**< triplet for non-mission direct takeoff command */
 	vehicle_roi_s					_vroi{};		/**< vehicle ROI */
+
 
 	perf_counter_t	_loop_perf;			/**< loop performance counter */
 
@@ -362,7 +368,10 @@ private:
 	Land		_land;			/**< class for handling land commands */
 	PrecLand	_precland;			/**< class for handling precision land commands */
 	RTL 		_rtl;				/**< class that handles RTL */
+#if CONFIG_NAVIGATOR_ADSB
 	AdsbConflict 	_adsb_conflict;			/**< class that handles ADSB conflict avoidance */
+	traffic_buffer_s _traffic_buffer{};
+#endif // CONFIG_NAVIGATOR_ADSB
 
 	NavigatorMode *_navigation_mode{nullptr};	/**< abstract pointer to current navigation mode class */
 	NavigatorMode *_navigation_mode_array[NAVIGATOR_MODE_ARRAY_SIZE] {};	/**< array of navigation modes */
@@ -377,8 +386,6 @@ private:
 
 	float _cruising_speed_current_mode{-1.0f};
 	float _mission_throttle{NAN};
-
-	traffic_buffer_s _traffic_buffer{};
 
 	bool _is_capturing_images{false}; // keep track if we need to stop capturing images
 
@@ -400,6 +407,8 @@ private:
 
 	void publish_vehicle_command_ack(const vehicle_command_s &cmd, uint8_t result);
 
+	void publish_distance_sensor_mode_request();
+
 	bool geofence_allows_position(const vehicle_global_position_s &pos);
 
 	DEFINE_PARAMETERS(
@@ -419,10 +428,10 @@ private:
 		_param_nav_min_gnd_dist,	/**< minimum distance to ground (Mission and RTL)*/
 
 		// non-navigator parameters: Mission (MIS_*)
-		(ParamFloat<px4::params::MIS_TAKEOFF_ALT>) _param_mis_takeoff_alt,
-		(ParamFloat<px4::params::MIS_YAW_TMT>)     _param_mis_yaw_tmt,
-		(ParamFloat<px4::params::MIS_YAW_ERR>)     _param_mis_yaw_err,
-		(ParamFloat<px4::params::MIS_PD_TO>)       _param_mis_payload_delivery_timeout,
-		(ParamInt<px4::params::MIS_LND_ABRT_ALT>)  _param_mis_lnd_abrt_alt
+		(ParamFloat<px4::params::MIS_TAKEOFF_ALT>)    _param_mis_takeoff_alt,
+		(ParamFloat<px4::params::MIS_YAW_TMT>)        _param_mis_yaw_tmt,
+		(ParamFloat<px4::params::MIS_YAW_ERR>)        _param_mis_yaw_err,
+		(ParamInt<px4::params::MIS_LND_ABRT_ALT>)     _param_mis_lnd_abrt_alt,
+		(ParamFloat<px4::params::MIS_COMMAND_TOUT>) _param_mis_command_tout
 	)
 };
