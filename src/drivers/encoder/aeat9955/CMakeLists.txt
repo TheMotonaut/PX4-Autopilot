@@ -31,11 +31,13 @@
 #
 ############################################################################
 px4_add_module(
-	MODULE drivers__encoder
-	MAIN encoder
+	MODULE drivers__encoder__aeat9955
+	MAIN aeat9955
 	COMPILE_FLAGS
 	SRCS
 		main.cpp
+		spi.cpp
+		aeat9955.cpp
 		main.hpp
 	DEPENDS
 		px4_work_queue

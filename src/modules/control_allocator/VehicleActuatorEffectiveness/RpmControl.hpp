@@ -48,6 +48,7 @@
 #include <uORB/Publication.hpp>
 #include <uORB/Subscription.hpp>
 #include <uORB/topics/rpm.h>
+#include <uORB/topics/propellor_encoder.h>
 
 class RpmControl : public ModuleParams
 {
@@ -57,6 +58,7 @@ public:
 
 	void setSpoolupProgress(float spoolup_progress);
 	float getActuatorCorrection();
+	float getActuatorCorrection(propellor_encoder_s propeller_data);
 
 private:
 	static constexpr float SPOOLUP_PROGRESS_WITH_CONTROLLER_ENGAGED = .8f; // [0,1]

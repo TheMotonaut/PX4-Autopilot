@@ -83,3 +83,28 @@ float RpmControl::getActuatorCorrection()
 
 	return _actuator_correction;
 }
+
+float RpmControl::getActuatorCorrection(propellor_encoder_s propeller_data)
+{
+	hrt_abstime now = hrt_absolute_time();
+
+	// RPM measurement update
+	const float dt = math::min((now - _timestamp_last_measurement) * 1e-6f, 1.f);
+	_timestamp_last_measurement = propeller_data.timestamp;
+
+	const float gain_scale = math::interpolate(_spoolup_progress, .8f, 1.f, 0.f, 1e-3f);
+	_pid.setGains(_param_ca_heli_rpm_p.get() * gain_scale, _param_ca_heli_rpm_i.get() * gain_scale, 0.f);
+	_actuator_correction = _pid.update(propeller_data.propellor_speed*9.549f, dt, true);
+
+	_rpm_invalid = propeller_data.propellor_speed < 1.f;
+
+	// Timeout
+	const bool timeout = now > _timestamp_last_measurement + 1_s;
+
+	if (_rpm_invalid || timeout) {
+		_pid.resetIntegral();
+		_actuator_correction = 0.f;
+	}
+
+	return _actuator_correction;
+}

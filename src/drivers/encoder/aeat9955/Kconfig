@@ -1,0 +1,5 @@
+menuconfig DRIVERS_ENCODER_AEAT9955
+	bool "aeat9955"
+	default n
+	---help---
+		Enable support for magnetic encoder aeat9955
