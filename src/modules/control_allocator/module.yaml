@@ -33,6 +33,8 @@ parameters:
                 13: Rover (Mecanum)
                 14: Spacecraft 2D
                 15: Spacecraft 3D
+                16: Helicopter swashplateless
+
             default: 0
 
         CA_METHOD:
@@ -1191,7 +1193,7 @@ mixer:
                         position: [ -1, 1, 0 ]
                       - name: 'Left Motor Back'
                         position: [ -1, -1, 0 ]
-            14: # Helicopter swashplateless (tail ESC)
+            16: # Helicopter swashplateless (tail ESC)
                 actuators:
                   - actuator_type: 'motor'
                     count: 1
