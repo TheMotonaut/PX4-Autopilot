@@ -159,6 +159,8 @@ private:
 		HELICOPTER_SWASHLESS = 14,
 		HELICOPTER_TAIL_SERVO = 11,
 		HELICOPTER_COAXIAL = 12,
+		SPACECRAFT_2D = 13,
+		SPACECRAFT_3D = 14,
 	};
 
 	enum class FailureMode {

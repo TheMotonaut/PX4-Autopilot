@@ -172,9 +172,13 @@ set(msg_files
 	RateCtrlStatus.msg
 	RcChannels.msg
 	RcParameterMap.msg
-	RoverAckermannGuidanceStatus.msg
-	RoverAckermannSetpoint.msg
-	RoverAckermannStatus.msg
+	RoverAttitudeSetpoint.msg
+	RoverAttitudeStatus.msg
+	RoverVelocityStatus.msg
+	RoverRateSetpoint.msg
+	RoverRateStatus.msg
+	RoverSteeringSetpoint.msg
+	RoverThrottleSetpoint.msg
 	RoverDifferentialGuidanceStatus.msg
 	RoverDifferentialSetpoint.msg
 	RoverDifferentialStatus.msg
@@ -211,8 +215,6 @@ set(msg_files
 	TelemetryStatus.msg
 	TiltrotorExtraControls.msg
 	TimesyncStatus.msg
-	TrajectoryBezier.msg
-	TrajectoryWaypoint.msg
 	TransponderReport.msg
 	TuneControl.msg
 	UavcanParameterRequest.msg
@@ -232,8 +234,6 @@ set(msg_files
 	VehicleRoi.msg
 	VehicleThrustSetpoint.msg
 	VehicleTorqueSetpoint.msg
-	VehicleTrajectoryBezier.msg
-	VehicleTrajectoryWaypoint.msg
 	VelocityLimits.msg
 	WheelEncoders.msg
 	Wind.msg
