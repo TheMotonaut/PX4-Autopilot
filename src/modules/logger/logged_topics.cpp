@@ -102,9 +102,13 @@ void LoggedTopics::add_default_topics()
 	add_topic("position_setpoint_triplet", 200);
 	add_optional_topic("px4io_status");
 	add_topic("radio_status");
-	add_optional_topic("rover_ackermann_guidance_status", 100);
-	add_optional_topic("rover_ackermann_setpoint", 100);
-	add_optional_topic("rover_ackermann_status", 100);
+	add_optional_topic("rover_attitude_setpoint", 100);
+	add_optional_topic("rover_attitude_status", 100);
+	add_optional_topic("rover_velocity_status", 100);
+	add_optional_topic("rover_rate_setpoint", 100);
+	add_optional_topic("rover_rate_status", 100);
+	add_optional_topic("rover_steering_setpoint", 100);
+	add_optional_topic("rover_throttle_setpoint", 100);
 	add_optional_topic("rover_differential_guidance_status", 100);
 	add_optional_topic("rover_differential_setpoint", 100);
 	add_optional_topic("rover_differential_status", 100);
@@ -331,8 +335,6 @@ void LoggedTopics::add_vision_and_avoidance_topics()
 	add_topic("obstacle_distance_fused");
 	add_topic("obstacle_distance");
 	add_topic("vehicle_mocap_odometry", 30);
-	add_topic("vehicle_trajectory_waypoint", 200);
-	add_topic("vehicle_trajectory_waypoint_desired", 200);
 	add_topic("vehicle_visual_odometry", 30);
 }
 
