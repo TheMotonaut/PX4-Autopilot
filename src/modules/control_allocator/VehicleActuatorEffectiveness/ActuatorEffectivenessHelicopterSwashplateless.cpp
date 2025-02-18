@@ -31,15 +31,16 @@
  *
  ****************************************************************************/
 
-#include "ActuatorEffectivenessHelicopterSwashless.hpp"
+#include "ActuatorEffectivenessHelicopterSwashplateless.hpp"
 #include <lib/mathlib/mathlib.h>
 
 using namespace matrix;
 using namespace time_literals;
 
-ActuatorEffectivenessHelicopter::ActuatorEffectivenessHelicopter(ModuleParams *parent, ActuatorType tail_actuator_type)
+ActuatorEffectivenessHelicopterSwashplateless::ActuatorEffectivenessHelicopterSwashplateless(ModuleParams *parent, ActuatorType tail_actuator_type)
 	: ModuleParams(parent), _tail_actuator_type(tail_actuator_type)
 {
+	/*
 	for (int i = 0; i < NUM_SWASH_PLATE_SERVOS_MAX; ++i) {
 		char buffer[17];
 		snprintf(buffer, sizeof(buffer), "CA_SP0_ANG%u", i);
@@ -51,7 +52,7 @@ ActuatorEffectivenessHelicopter::ActuatorEffectivenessHelicopter(ModuleParams *p
 	}
 
 	_param_handles.num_swash_plate_servos = param_find("CA_SP0_COUNT");
-
+	*/
 	for (int i = 0; i < NUM_CURVE_POINTS; ++i) {
 		char buffer[17];
 		snprintf(buffer, sizeof(buffer), "CA_HELI_THR_C%u", i);
@@ -69,12 +70,12 @@ ActuatorEffectivenessHelicopter::ActuatorEffectivenessHelicopter(ModuleParams *p
 	updateParams();
 }
 
-void ActuatorEffectivenessHelicopter::updateParams()
+void ActuatorEffectivenessHelicopterSwashplateless::updateParams()
 {
 	ModuleParams::updateParams();
 
-	int32_t count = 0;
-
+	//int32_t count = 0;
+	/*
 	if (param_get(_param_handles.num_swash_plate_servos, &count) != 0) {
 		PX4_ERR("param_get failed");
 		return;
@@ -94,7 +95,7 @@ void ActuatorEffectivenessHelicopter::updateParams()
 		param_get(_param_handles.throttle_curve[i], &_geometry.throttle_curve[i]);
 		param_get(_param_handles.pitch_curve[i], &_geometry.pitch_curve[i]);
 	}
-
+	*/
 	param_get(_param_handles.yaw_collective_pitch_scale, &_geometry.yaw_collective_pitch_scale);
 	param_get(_param_handles.yaw_collective_pitch_offset, &_geometry.yaw_collective_pitch_offset);
 	param_get(_param_handles.yaw_throttle_scale, &_geometry.yaw_throttle_scale);
@@ -104,7 +105,7 @@ void ActuatorEffectivenessHelicopter::updateParams()
 	_geometry.yaw_sign = (yaw_ccw == 1) ? -1.f : 1.f;
 }
 
-bool ActuatorEffectivenessHelicopter::getEffectivenessMatrix(Configuration &configuration,
+bool ActuatorEffectivenessHelicopterSwashplateless::getEffectivenessMatrix(Configuration &configuration,
 		EffectivenessUpdateReason external_update)
 {
 	if (external_update == EffectivenessUpdateReason::NO_EXTERNAL_UPDATE) {
@@ -117,6 +118,7 @@ bool ActuatorEffectivenessHelicopter::getEffectivenessMatrix(Configuration &conf
 	// Tail (yaw) (either ESC or Servo)
 	configuration.addActuator(_tail_actuator_type, Vector3f{}, Vector3f{});
 
+	/*
 	// N swash plate servos
 	_first_swash_plate_servo_index = configuration.num_actuators_matrix[0];
 
@@ -124,11 +126,11 @@ bool ActuatorEffectivenessHelicopter::getEffectivenessMatrix(Configuration &conf
 		configuration.addActuator(ActuatorType::SERVOS, Vector3f{}, Vector3f{});
 		configuration.trim[configuration.selected_matrix](i) = _geometry.swash_plate_servos[i].trim;
 	}
-
+	*/
 	return true;
 }
 
-void ActuatorEffectivenessHelicopter::updateSetpoint(const matrix::Vector<float, NUM_AXES> &control_sp,
+void ActuatorEffectivenessHelicopterSwashplateless::updateSetpoint(const matrix::Vector<float, NUM_AXES> &control_sp,
 		int matrix_index, ActuatorVector &actuator_sp, const matrix::Vector<float, NUM_ACTUATORS> &actuator_min,
 		const matrix::Vector<float, NUM_ACTUATORS> &actuator_max)
 {
@@ -171,7 +173,7 @@ void ActuatorEffectivenessHelicopter::updateSetpoint(const matrix::Vector<float,
 	} else if (actuator_sp(1) > actuator_max(1)) {
 		setSaturationFlag(_geometry.yaw_sign, _saturation_flags.yaw_pos, _saturation_flags.yaw_neg);
 	}
-
+	/*
 	for (int i = 0; i < _geometry.num_swash_plate_servos; i++) {
 		float roll_coeff = sinf(_geometry.swash_plate_servos[i].angle) * _geometry.swash_plate_servos[i].arm_length;
 		float pitch_coeff = cosf(_geometry.swash_plate_servos[i].angle) * _geometry.swash_plate_servos[i].arm_length;
@@ -190,9 +192,10 @@ void ActuatorEffectivenessHelicopter::updateSetpoint(const matrix::Vector<float,
 			setSaturationFlag(pitch_coeff, _saturation_flags.pitch_pos, _saturation_flags.pitch_neg);
 		}
 	}
+	*/
 }
 
-bool ActuatorEffectivenessHelicopter::mainMotorEnaged()
+bool ActuatorEffectivenessHelicopterSwashplateless::mainMotorEnaged()
 {
 	manual_control_switches_s manual_control_switches;
 
@@ -204,7 +207,7 @@ bool ActuatorEffectivenessHelicopter::mainMotorEnaged()
 	return _main_motor_engaged;
 }
 
-float ActuatorEffectivenessHelicopter::throttleSpoolupProgress()
+float ActuatorEffectivenessHelicopterSwashplateless::throttleSpoolupProgress()
 {
 	vehicle_status_s vehicle_status;
 
@@ -224,7 +227,7 @@ float ActuatorEffectivenessHelicopter::throttleSpoolupProgress()
 }
 
 
-void ActuatorEffectivenessHelicopter::setSaturationFlag(float coeff, bool &positive_flag, bool &negative_flag)
+void ActuatorEffectivenessHelicopterSwashplateless::setSaturationFlag(float coeff, bool &positive_flag, bool &negative_flag)
 {
 	if (coeff > 0.f) {
 		// A positive change in given axis will increase saturation
@@ -236,7 +239,7 @@ void ActuatorEffectivenessHelicopter::setSaturationFlag(float coeff, bool &posit
 	}
 }
 
-void ActuatorEffectivenessHelicopter::getUnallocatedControl(int matrix_index, control_allocator_status_s &status)
+void ActuatorEffectivenessHelicopterSwashplateless::getUnallocatedControl(int matrix_index, control_allocator_status_s &status)
 {
 	// Note: the values '-1', '1' and '0' are just to indicate a negative,
 	// positive or no saturation to the rate controller. The actual magnitude is not used.

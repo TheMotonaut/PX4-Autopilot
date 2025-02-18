@@ -1197,17 +1197,17 @@ mixer:
                   - actuator_type: 'motor'
                     item_label_prefix: ['Yaw tail Motor']
                     count: 1
-                  - actuator_type: 'servo'
-                    group_label: 'Swash plate servos'
-                    count: 'CA_SP0_COUNT'
-                    per_item_parameters:
-                        extra:
-                          - name: 'CA_SP0_ANG${i}'
-                            label: 'Angle'
-                          - name: 'CA_SP0_ARM_L${i}'
-                            label: 'Arm Length (relative)'
-                          - name: 'CA_SV_CS${i}_TRIM'
-                            label: 'Trim'
+                  # - actuator_type: 'servo'
+                  #  group_label: 'Swash plate servos'
+                  #  count: 'CA_SP0_COUNT'
+                  #  per_item_parameters:
+                  #      extra:
+                  #        - name: 'CA_SP0_ANG${i}'
+                  #          label: 'Angle'
+                  #        - name: 'CA_SP0_ARM_L${i}'
+                  #          label: 'Arm Length (relative)'
+                  #        - name: 'CA_SV_CS${i}_TRIM'
+                  #          label: 'Trim'
                     parameters:
                       - label: 'Collective pitch offset to align least amount of rotor drag'
                         name: CA_HELI_YAW_CP_O

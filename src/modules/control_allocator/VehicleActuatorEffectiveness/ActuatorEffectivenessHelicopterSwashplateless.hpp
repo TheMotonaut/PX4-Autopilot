@@ -46,11 +46,10 @@
 
 #define CONTROL_ALLOCATOR_RPM_CONTROL true
 
-class ActuatorEffectivenessHelicopter : public ModuleParams, public ActuatorEffectiveness
+class ActuatorEffectivenessHelicopterSwashplateless : public ModuleParams, public ActuatorEffectiveness
 {
 public:
 
-	static constexpr int NUM_SWASH_PLATE_SERVOS_MAX = 4;
 	static constexpr int NUM_CURVE_POINTS = 5;
 
 	struct SwashPlateGeometry {
@@ -60,8 +59,6 @@ public:
 	};
 
 	struct Geometry {
-		SwashPlateGeometry swash_plate_servos[NUM_SWASH_PLATE_SERVOS_MAX];
-		int num_swash_plate_servos{0};
 		float throttle_curve[NUM_CURVE_POINTS];
 		float pitch_curve[NUM_CURVE_POINTS];
 		float yaw_collective_pitch_scale;
@@ -71,8 +68,8 @@ public:
 		float spoolup_time;
 	};
 
-	ActuatorEffectivenessHelicopter(ModuleParams *parent, ActuatorType tail_actuator_type);
-	virtual ~ActuatorEffectivenessHelicopter() = default;
+	ActuatorEffectivenessHelicopterSwashplateless(ModuleParams *parent, ActuatorType tail_actuator_type);
+	virtual ~ActuatorEffectivenessHelicopterSwashplateless() = default;
 
 	bool getEffectivenessMatrix(Configuration &configuration, EffectivenessUpdateReason external_update) override;
 
@@ -110,8 +107,6 @@ private:
 		param_t trim;
 	};
 	struct ParamHandles {
-		ParamHandlesSwashPlate swash_plate_servos[NUM_SWASH_PLATE_SERVOS_MAX];
-		param_t num_swash_plate_servos;
 		param_t throttle_curve[NUM_CURVE_POINTS];
 		param_t pitch_curve[NUM_CURVE_POINTS];
 		param_t yaw_collective_pitch_scale;
@@ -124,7 +119,6 @@ private:
 
 	Geometry _geometry{};
 
-	int _first_swash_plate_servo_index{};
 	SaturationFlags _saturation_flags;
 
 	// Throttle spoolup state

@@ -262,8 +262,8 @@ ControlAllocator::update_effectiveness_source()
 			tmp = new ActuatorEffectivenessHelicopter(this, ActuatorType::MOTORS);
 			break;
 
-		case EffectivenessSource::HELICOPTER_SWASHLESS:
-			tmp = new ActuatorEffectivenessHelicopter(this, ActuatorType::MOTORS);
+		case EffectivenessSource::HELICOPTER_SWASHPLATELESS:
+			tmp = new ActuatorEffectivenessHelicopterSwashplateless(this, ActuatorType::MOTORS);
 			break;
 
 		case EffectivenessSource::HELICOPTER_TAIL_SERVO:

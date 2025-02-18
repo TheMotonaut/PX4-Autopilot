@@ -53,6 +53,7 @@
 #include <ActuatorEffectivenessUUV.hpp>
 #include <ActuatorEffectivenessHelicopter.hpp>
 #include <ActuatorEffectivenessHelicopterCoaxial.hpp>
+#include <ActuatorEffectivenessHelicopterSwashplateless.hpp>
 
 #include <ControlAllocation.hpp>
 #include <ControlAllocationPseudoInverse.hpp>
@@ -156,7 +157,7 @@ private:
 		MULTIROTOR_WITH_TILT = 8,
 		CUSTOM = 9,
 		HELICOPTER_TAIL_ESC = 10,
-		HELICOPTER_SWASHLESS = 14,
+		HELICOPTER_SWASHPLATELESS = 14,
 		HELICOPTER_TAIL_SERVO = 11,
 		HELICOPTER_COAXIAL = 12,
 	};
