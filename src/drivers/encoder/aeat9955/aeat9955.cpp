@@ -43,7 +43,7 @@ void AEAT9955::start()
 void AEAT9955::readStatus(){
 	uint8_t buffer[2];
 
-	if(read(CHIP_STATUS, buffer, 2) != PX4_OK){
+	if(_interface->read(CHIP_STATUS, buffer, 2) != PX4_OK){
 		return;
 	}
 
@@ -67,7 +67,7 @@ void AEAT9955::print_status(){
 
 float AEAT9955::readAngle() {
 	uint8_t buffer[3];
-	if(read(POSITION_READ, buffer, 3) != PX4_OK){
+	if(_interface->read(POSITION_READ, buffer, 3) != PX4_OK){
 		return PX4_ERROR;
 	}
 	uint32_t temp = buffer[0] | buffer[1] << 8 | buffer[2] << 16;
@@ -77,13 +77,13 @@ float AEAT9955::readAngle() {
 }
 
 void AEAT9955::RunImpl(){
-	int32_t diffTime = hrt_elapsed_time(&_last_measurement_time);
-
+	//int32_t diffTime = hrt_elapsed_time(&_last_measurement_time);
+	/*
 	if (diffTime < POLL_RATE / 2) {
 		PX4_ERR("AEAT9955 loop calld to early");
 		return;
 	}
-
+	*/
 	_last_measurement_time = hrt_absolute_time();
 
 	float angle = readAngle();
