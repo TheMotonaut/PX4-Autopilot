@@ -17,6 +17,8 @@ class AEAT9955_SPI : public device::SPI{
 		AEAT9955_SPI(int bus, uint32_t chip_select, int bus_frequency, spi_mode_e spi_mode);
 		~AEAT9955_SPI() override = default;
 
+		virtual int init();
+
 		/**
 		 * Read directly from the device.
 		 *
@@ -27,7 +29,7 @@ class AEAT9955_SPI : public device::SPI{
 		 * @param count	The number of items to read.
 		 * @return		The number of items read on success, negative errno otherwise.
 		 */
-		int	read(unsigned reg, uint8_t *data, unsigned count);
+		int	read(uint8_t reg, uint8_t *data, uint8_t count);
 
 		/**
 		 * Write directly to the device.
@@ -39,7 +41,7 @@ class AEAT9955_SPI : public device::SPI{
 		 * @param count	The number of items to write.
 		 * @return		The number of items written on success, negative errno otherwise.
 		 */
-		int	write(unsigned reg, uint8_t *data, unsigned count);
+		int	write(uint8_t reg, uint8_t *data, uint8_t count);
 
 		/**
 		 * Read a register from the device.
@@ -58,6 +60,18 @@ device::Device *AEAT9955_SPI_interface(int bus, uint32_t chip_select, int bus_fr
 }
 
 AEAT9955_SPI::AEAT9955_SPI(int bus, uint32_t chip_select, int bus_frequency, spi_mode_e spi_mode) : SPI(DRV_SENS_DEVTYPE_AEAT9955, MODULE_NAME, bus, chip_select, spi_mode, bus_frequency){
+}
+
+int AEAT9955_SPI::init(){
+	int ret;
+	ret = SPI::init();
+
+	if (ret != PX4_OK){
+		DEVICE_DEBUG("SPI init failed");
+		return -EIO;
+	}
+
+	return PX4_OK;
 }
 
 int AEAT9955_SPI::probe(){
@@ -88,23 +102,23 @@ void calc_parity(uint8_t *data, unsigned count){
 	return;
 }
 
-int AEAT9955_SPI::read(unsigned reg, uint8_t *data, unsigned count){
-	calc_parity(data, count);
+int AEAT9955_SPI::write(uint8_t reg, uint8_t *data, uint8_t count){
+	uint8_t buf[32];
 
-	if(transfer(data, nullptr, count)){
-		return PX4_ERROR;
-	}
 
-	return transfer(data, data, count);
+	buf[0] = reg;
+	memcpy(&buf[0], data, count);
+
+	return transfer(&buf[0], &buf[0], count);
 }
 
-int AEAT9955_SPI::write(unsigned reg, uint8_t *data, unsigned count){
-	data[0] = reg;
-	data[1] = 1 << 7;
+int AEAT9955_SPI::read(uint8_t reg, uint8_t *data, uint8_t count){
+	uint8_t buf[32];
 
-	calc_parity(data, count);
+	buf[0] = reg;
+	buf[1] = (1 << 7);
 
-	return transfer(data, nullptr, count);
+	int ret = transfer(&buf[0], &buf[0], count);
+	memcpy(data, &buf[0], count);
+	return ret;
 }
-
-

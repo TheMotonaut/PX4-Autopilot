@@ -112,5 +112,7 @@ fi
 
 bmp388 -X -b 2 start
 
+aeat9955 start -S
+
 unset INA_CONFIGURED
 unset HAVE_PM2

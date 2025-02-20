@@ -19,13 +19,11 @@ AEAT9955::AEAT9955(device::Device *interface, const I2CSPIDriverConfig &config) 
 AEAT9955::~AEAT9955() {
 	perf_free(_sample_perf);
 	perf_free(_errors);
+
+	delete _interface;
 }
 
 int AEAT9955::init(){
-	if(_interface->init() != PX4_OK){
-		PX4_ERR("SPI/I2C interface init failed");
-		return PX4_ERROR;
-	}
 
 	start();
 
@@ -35,7 +33,7 @@ int AEAT9955::init(){
 void AEAT9955::start()
 {
 	/* start polling at the specified rate */
-	ScheduleOnInterval((100000));
+	ScheduleOnInterval((1000000));
 
 	_propellor_angle_pub.advertise();
 }
@@ -68,7 +66,8 @@ void AEAT9955::print_status(){
 float AEAT9955::readAngle() {
 	uint8_t buffer[3];
 	if(_interface->read(POSITION_READ, buffer, 3) != PX4_OK){
-		return PX4_ERROR;
+		memory_error_flag = true;
+		return -0.5;
 	}
 	uint32_t temp = buffer[0] | buffer[1] << 8 | buffer[2] << 16;
 	float angle = ((float) (temp & 0x3FF)) / (1 << 18);	// Remove parity and error flag and devide by the resolution

@@ -6,6 +6,8 @@
 
 //__EXPORT int px4_simple_app_main(int argc, char *argv[]);
 
+extern "C" __EXPORT int aeat9955_main(int argc, char *argv[]);
+
 void AEAT9955::print_usage()
 {
 	PRINT_MODULE_USAGE_NAME("AEAT9955", "driver");
@@ -22,6 +24,12 @@ I2CSPIDriverBase *AEAT9955::instantiate(const I2CSPIDriverConfig &config, int ru
 
 	if (interface == nullptr) {
 		PX4_ERR("alloc failed");
+		return nullptr;
+	}
+
+	if (interface->init() != PX4_OK){
+		delete interface;
+		PX4_DEBUG("no device on bus %i (devid 0x%x)", config.bus, config.spi_devid);
 		return nullptr;
 	}
 
@@ -43,10 +51,9 @@ I2CSPIDriverBase *AEAT9955::instantiate(const I2CSPIDriverConfig &config, int ru
 extern "C" int aeat9955_main(int argc, char *argv[]){
 	using ThisDriver = AEAT9955;
 	BusCLIArguments cli{false, true};
-	cli.default_spi_frequency = 1000000; // 1MHz
+	cli.default_spi_frequency = 100000; // 1MHz
 
 	cli.spi_mode = SPIDEV_MODE0;
-	cli.support_keep_running = true;
 
 	const char *verb = cli.parseDefaultArguments(argc, argv);
 
