@@ -23,6 +23,11 @@
 
 #define POLL_RATE 100
 
+#define ALARM_CLEAR_REG 0x12
+#define ALARM_CLEAR_VALUE 0x3F
+
+#define ALARM_LATCH (1 << 8)
+
 device::Device *AEAT9955_SPI_interface(int bus, uint32_t chip_select, int bus_frequency, spi_mode_e spi_mode);
 
 class AEAT9955 : public I2CSPIDriver<AEAT9955> {
@@ -39,6 +44,7 @@ class AEAT9955 : public I2CSPIDriver<AEAT9955> {
 
 	protected:
 		int probe();
+		void custom_method(const BusCLIArguments &cli);
 
 	private:
 		device::Device *_interface;
@@ -59,8 +65,16 @@ class AEAT9955 : public I2CSPIDriver<AEAT9955> {
 		uint64_t _last_measurement_time;
 		float _last_angle_measurement;
 
+		uint32_t debug_data;
+		uint32_t debug_data2;
+
+		uint8_t data0;
+		uint8_t data1;
+		uint8_t data2;
+
 		void readStatus();
 		float readAngle();
+		int clear_alarm();
 
 		void start();
 };

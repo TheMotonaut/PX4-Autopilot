@@ -83,42 +83,53 @@ int AEAT9955_SPI::probe(){
 	return success? OK: -EIO;
 }
 
-void calc_parity(uint8_t *data, unsigned count){
-	int set_bits = 0;
+void calc_parity(uint8_t *data){
 
+	uint32_t temp = data[0] | data[1] << 8 | data[2] << 16;
 
-
-	for (size_t i = 0; i < count; ++i){
-		uint8_t value = ((uint8_t *) data)[i];
-
-		while(value) {
-			set_bits += value & 1;
-			value >>= 1;
+	uint8_t set_bits = popcount(temp);
+	/*
+	while(temp) {
+		if(temp & 0x1){
+			set_bits += 1;
 		}
+		temp = temp >> 1;
 	}
+	*/
 
-	data[1] = ((set_bits % 2) << 8) | data[1];
 
-	return;
+
+	data[1] = ((set_bits % 2) << 7) | data[1];
 }
 
 int AEAT9955_SPI::write(unsigned reg, void *data, unsigned count){
-	uint8_t buf[32];
+	uint8_t buf[3] = {0};
 
+	buf[1] = reg;
 
-	buf[0] = reg;
-	memcpy(&buf[0], data, count);
+	calc_parity(buf);
 
-	return transfer(&buf[0], &buf[0], count);
+	transfer(&buf[0], nullptr, count);
+
+	uint8_t buf2[3] = {0};
+
+	memcpy(&buf2[0], data, count);
+	transfer(&buf2[0], nullptr, count);
+
+	return PX4_OK;
 }
 
 int AEAT9955_SPI::read(unsigned reg, void *data, unsigned count){
-	uint8_t buf[32];
+	uint8_t tx[3] = {0};
+	uint8_t rx[3] = {0};
 
-	buf[0] = reg;
-	buf[1] = (1 << 7);
+	tx[1] = reg;
+	tx[0] = (1 << 6);
 
-	int ret = transfer(&buf[0], &buf[0], count);
-	memcpy(data, &buf[0], count);
+	calc_parity(tx);
+
+	transfer(&tx[0], nullptr, count);
+	int ret = transfer(nullptr, &rx[0], count);
+	memcpy(data, &rx[0], count);
 	return ret;
 }

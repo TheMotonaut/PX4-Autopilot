@@ -48,12 +48,17 @@ I2CSPIDriverBase *AEAT9955::instantiate(const I2CSPIDriverConfig &config, int ru
 	return dev;
 }
 
+void AEAT9955::custom_method(const BusCLIArguments &cli){
+	clear_alarm();
+}
+
+
 extern "C" int aeat9955_main(int argc, char *argv[]){
 	using ThisDriver = AEAT9955;
 	BusCLIArguments cli{false, true};
-	cli.default_spi_frequency = 100000; // 1MHz
+	cli.default_spi_frequency = 2000000; // 1MHz
 
-	cli.spi_mode = SPIDEV_MODE0;
+	cli.spi_mode = SPIDEV_MODE1;
 
 	const char *verb = cli.parseDefaultArguments(argc, argv);
 
@@ -73,6 +78,8 @@ extern "C" int aeat9955_main(int argc, char *argv[]){
 
 	} else if (!strcmp(verb, "status")) {
 		return ThisDriver::module_status(iterator);
+	} else if (!strcmp(verb, "clear")) {
+		return ThisDriver::module_custom_method(cli, iterator);
 	}
 	ThisDriver::print_usage();
 
