@@ -29,7 +29,7 @@ class AEAT9955_SPI : public device::SPI{
 		 * @param count	The number of items to read.
 		 * @return		The number of items read on success, negative errno otherwise.
 		 */
-		int	read(uint8_t reg, uint8_t *data, uint8_t count);
+		int	read(unsigned reg, void *data, unsigned count) override;
 
 		/**
 		 * Write directly to the device.
@@ -41,7 +41,7 @@ class AEAT9955_SPI : public device::SPI{
 		 * @param count	The number of items to write.
 		 * @return		The number of items written on success, negative errno otherwise.
 		 */
-		int	write(uint8_t reg, uint8_t *data, uint8_t count);
+		int	write(unsigned reg, void *data, unsigned count) override;
 
 		/**
 		 * Read a register from the device.
@@ -102,7 +102,7 @@ void calc_parity(uint8_t *data, unsigned count){
 	return;
 }
 
-int AEAT9955_SPI::write(uint8_t reg, uint8_t *data, uint8_t count){
+int AEAT9955_SPI::write(unsigned reg, void *data, unsigned count){
 	uint8_t buf[32];
 
 
@@ -112,7 +112,7 @@ int AEAT9955_SPI::write(uint8_t reg, uint8_t *data, uint8_t count){
 	return transfer(&buf[0], &buf[0], count);
 }
 
-int AEAT9955_SPI::read(uint8_t reg, uint8_t *data, uint8_t count){
+int AEAT9955_SPI::read(unsigned reg, void *data, unsigned count){
 	uint8_t buf[32];
 
 	buf[0] = reg;
