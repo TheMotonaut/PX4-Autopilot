@@ -3,6 +3,9 @@
 #include <px4_platform_common/getopt.h>
 #include <px4_platform_common/module.h>
 
+#define CLEAR_ALARM_CUSTOM_METHOD 0
+#define START_AUTO_CALIBRATION_CUSTOM_METH0D 1
+#define STOP_AUTO_CALIBRATION_CUSTOM_METHOD 2
 
 //__EXPORT int px4_simple_app_main(int argc, char *argv[]);
 
@@ -49,7 +52,25 @@ I2CSPIDriverBase *AEAT9955::instantiate(const I2CSPIDriverConfig &config, int ru
 }
 
 void AEAT9955::custom_method(const BusCLIArguments &cli){
-	clear_alarm();
+
+	switch (cli.custom1)
+	{
+	case CLEAR_ALARM_CUSTOM_METHOD: {
+		clear_alarm();
+		break;
+	}
+	case START_AUTO_CALIBRATION_CUSTOM_METH0D: {
+		startAutoCalibrate();
+		break;
+	}
+	case STOP_AUTO_CALIBRATION_CUSTOM_METHOD: {
+		uint8_t result = stopAutoCalibrate();
+		::printf("Auto Calibration Result: %u", result);
+		break;
+	}
+	default:
+		break;
+	}
 }
 
 
@@ -79,8 +100,16 @@ extern "C" int aeat9955_main(int argc, char *argv[]){
 	} else if (!strcmp(verb, "status")) {
 		return ThisDriver::module_status(iterator);
 	} else if (!strcmp(verb, "clear")) {
+		cli.custom1 = CLEAR_ALARM_CUSTOM_METHOD;
+		return ThisDriver::module_custom_method(cli, iterator);
+	} else if (!strcmp(verb, "startcalib")) {
+		cli.custom1 = START_AUTO_CALIBRATION_CUSTOM_METH0D;
+		return ThisDriver::module_custom_method(cli, iterator);
+	} else if (!strcmp(verb, "stopcalib")) {
+		cli.custom1 = STOP_AUTO_CALIBRATION_CUSTOM_METHOD;
 		return ThisDriver::module_custom_method(cli, iterator);
 	}
+
 	ThisDriver::print_usage();
 
 	return PX4_ERROR;

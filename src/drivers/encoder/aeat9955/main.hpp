@@ -11,11 +11,11 @@
 #include <uORB/Publication.hpp>
 #include <uORB/topics/propellor_encoder.h>
 
-#define POSITION_READ 0x3F
+#define POSITION_READ_REG 0x3F
 
 
 // Volatile Memory address
-#define CHIP_STATUS 0x29
+#define CHIP_STATUS_REG 0x29
 
 #define UNLOCK_LEVEL1_ADDR 0x10
 #define UNLOCK_LEVEL1_CODE 0xAB
@@ -25,6 +25,15 @@
 
 #define ALARM_CLEAR_REG 0x12
 #define ALARM_CLEAR_VALUE 0x3F
+
+#define CALIBRATION_CONFIG_REG 0x15
+#define INIT_AUTO_CALIBRATION_VALUE 0x02
+#define EXIT_CALIBRATION_VALUE 0x00
+#define RESET_ZERO_VALUE 0x08
+
+#define CALIBRATION_STATUS_REG 0x2A
+
+
 
 #define ALARM_LATCH (1 << 8)
 
@@ -54,13 +63,17 @@ class AEAT9955 : public I2CSPIDriver<AEAT9955> {
 		perf_counter_t _sample_perf;
 		perf_counter_t _errors;
 
+		bool ready0_flag;
+		bool ready1_flag;
+
 		bool magnet_high_error_flag;
 		bool magnet_low_error_flag;
 
+		bool overvoltage_flag;
+		bool undervolage_flag;
+
 		bool memory_error_flag;
 		bool tracker_error;
-
-		bool ready_flag;
 
 		uint64_t _last_measurement_time;
 		float _last_angle_measurement;
@@ -68,15 +81,14 @@ class AEAT9955 : public I2CSPIDriver<AEAT9955> {
 		uint32_t debug_data;
 		uint32_t debug_data2;
 
-		uint8_t data0;
-		uint8_t data1;
-		uint8_t data2;
-
 		void readStatus();
 		float readAngle();
 		int clear_alarm();
 
 		void start();
+
+		void startAutoCalibrate();
+		uint8_t stopAutoCalibrate();
 };
 
 
