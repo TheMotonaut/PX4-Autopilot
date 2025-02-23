@@ -531,6 +531,18 @@ parameters:
               which is mostly the case when the main rotor turns counter-clockwise.
           type: boolean
           default: 0
+        RPM_MOD_AMP:
+          description:
+            short: RPM Modualtion amplitude factor
+            long: |
+              Default configuration is for a clockwise turning main rotor and
+              positive thrust of the tail rotor is expected to rotate the vehicle clockwise.
+              Set this parameter to true if the tail rotor provides thrust in counter-clockwise direction
+              which is mostly the case when the main rotor turns counter-clockwise.
+          type: float
+          min: 0.0
+          max: 0.25
+          default: 0.05
         CA_HELI_RPM_SP:
           description:
             short: Setpoint for main rotor rpm
@@ -1223,3 +1235,5 @@ mixer:
                         name: CA_HELI_YAW_CCW
                       - label: 'Throttle spoolup time'
                         name: COM_SPOOLUP_TIME
+                      - label: 'RPM Modulation Amplitude'
+                        name: RPM_MOD_AMP

@@ -66,6 +66,7 @@ ActuatorEffectivenessHelicopterSwashplateless::ActuatorEffectivenessHelicopterSw
 	_param_handles.yaw_throttle_scale = param_find("CA_HELI_YAW_TH_S");
 	_param_handles.yaw_ccw = param_find("CA_HELI_YAW_CCW");
 	_param_handles.spoolup_time = param_find("COM_SPOOLUP_TIME");
+	_param_handles.rpm_mod_amp = param_find("RPM_MOD_AMP");
 
 	updateParams();
 }
@@ -73,13 +74,13 @@ ActuatorEffectivenessHelicopterSwashplateless::ActuatorEffectivenessHelicopterSw
 void ActuatorEffectivenessHelicopterSwashplateless::updateParams()
 {
 	ModuleParams::updateParams();
-
-	//int32_t count = 0;
 	/*
+	int32_t count = 0;
+
 	if (param_get(_param_handles.num_swash_plate_servos, &count) != 0) {
 		PX4_ERR("param_get failed");
 		return;
-	}
+	}spoolup_progress
 
 	_geometry.num_swash_plate_servos = math::constrain((int)count, 3, NUM_SWASH_PLATE_SERVOS_MAX);
 
@@ -90,12 +91,12 @@ void ActuatorEffectivenessHelicopterSwashplateless::updateParams()
 		param_get(_param_handles.swash_plate_servos[i].arm_length, &_geometry.swash_plate_servos[i].arm_length);
 		param_get(_param_handles.swash_plate_servos[i].trim, &_geometry.swash_plate_servos[i].trim);
 	}
-
+	*/
 	for (int i = 0; i < NUM_CURVE_POINTS; ++i) {
 		param_get(_param_handles.throttle_curve[i], &_geometry.throttle_curve[i]);
 		param_get(_param_handles.pitch_curve[i], &_geometry.pitch_curve[i]);
 	}
-	*/
+
 	param_get(_param_handles.yaw_collective_pitch_scale, &_geometry.yaw_collective_pitch_scale);
 	param_get(_param_handles.yaw_collective_pitch_offset, &_geometry.yaw_collective_pitch_offset);
 	param_get(_param_handles.yaw_throttle_scale, &_geometry.yaw_throttle_scale);
@@ -103,6 +104,7 @@ void ActuatorEffectivenessHelicopterSwashplateless::updateParams()
 	int32_t yaw_ccw = 0;
 	param_get(_param_handles.yaw_ccw, &yaw_ccw);
 	_geometry.yaw_sign = (yaw_ccw == 1) ? -1.f : 1.f;
+	param_get(_param_handles.rpm_mod_amp, &_geometry.rpm_mod_amp);
 }
 
 bool ActuatorEffectivenessHelicopterSwashplateless::getEffectivenessMatrix(Configuration &configuration,
@@ -139,24 +141,27 @@ void ActuatorEffectivenessHelicopterSwashplateless::updateSetpoint(const matrix:
 	const float spoolup_progress = throttleSpoolupProgress();
 	float rpm_control_output = 0;
 
-	propellor_encoder_s propeller_data;
+	propellor_encoder_s propellor_data;
 
 	if (_propeller_position_sub.updated()){
-
-
-		_propeller_position_sub.copy(&propeller_data);
-
+		_propeller_position_sub.copy(&propellor_data);
 	}
 
 #if CONTROL_ALLOCATOR_RPM_CONTROL
 	_rpm_control.setSpoolupProgress(spoolup_progress);
-	rpm_control_output = _rpm_control.getActuatorCorrection(propeller_data);
+	rpm_control_output = _rpm_control.getActuatorCorrection(propellor_data);
 #endif // CONTROL_ALLOCATOR_RPM_CONTROL
 
+	const float AMP = _geometry.rpm_mod_amp;
+	float temp = AMP*sinf(propellor_data.propellor_angle);
+	float throttle = math::interpolateN(-control_sp(ControlAxis::THRUST_Z), _geometry.throttle_curve);
+	if(spoolup_progress > 0.5f){
+		throttle = (throttle + rpm_control_output + temp) * spoolup_progress;
+	}else{
+		throttle = (throttle + rpm_control_output) * spoolup_progress;
+	}
 
 	// throttle/collective pitch curve
-	const float throttle = (math::interpolateN(-control_sp(ControlAxis::THRUST_Z), _geometry.throttle_curve)
-				+ rpm_control_output) * spoolup_progress;
 	const float collective_pitch = math::interpolateN(-control_sp(ControlAxis::THRUST_Z), _geometry.pitch_curve);
 
 	// actuator mapping
@@ -246,20 +251,6 @@ void ActuatorEffectivenessHelicopterSwashplateless::getUnallocatedControl(int ma
 	if (_saturation_flags.roll_pos) {
 		status.unallocated_torque[0] = 1.f;
 
-	} else if (_saturation_flags.roll_neg) {
-		status.unallocated_torque[0] = -1.f;
-
-	} else {
-		status.unallocated_torque[0] = 0.f;
-	}
-
-	if (_saturation_flags.pitch_pos) {
-		status.unallocated_torque[1] = 1.f;
-
-	} else if (_saturation_flags.pitch_neg) {
-		status.unallocated_torque[1] = -1.f;
-
-	} else {
 		status.unallocated_torque[1] = 0.f;
 	}
 

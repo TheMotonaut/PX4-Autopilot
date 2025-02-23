@@ -32,8 +32,6 @@ int AEAT9955::init(){
 
 	start();
 
-
-
 	return PX4_OK;
 }
 
@@ -42,7 +40,7 @@ void AEAT9955::start()
 	clear_alarm();
 
 	/* start polling at the specified rate */
-	ScheduleOnInterval((1000000));
+	ScheduleOnInterval((1264));
 
 	_propellor_angle_pub.advertise();
 }

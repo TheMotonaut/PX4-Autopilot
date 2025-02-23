@@ -44,7 +44,7 @@
 
 #include "RpmControl.hpp"
 
-#define CONTROL_ALLOCATOR_RPM_CONTROL true
+#define CONTROL_ALLOCATOR_RPM_CONTROL false
 
 class ActuatorEffectivenessHelicopterSwashplateless : public ModuleParams, public ActuatorEffectiveness
 {
@@ -66,6 +66,7 @@ public:
 		float yaw_throttle_scale;
 		float yaw_sign;
 		float spoolup_time;
+		float rpm_mod_amp;
 	};
 
 	ActuatorEffectivenessHelicopterSwashplateless(ModuleParams *parent, ActuatorType tail_actuator_type);
@@ -114,6 +115,7 @@ private:
 		param_t yaw_throttle_scale;
 		param_t yaw_ccw;
 		param_t spoolup_time;
+		param_t rpm_mod_amp;
 	};
 	ParamHandles _param_handles{};
 
