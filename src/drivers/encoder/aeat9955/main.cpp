@@ -77,7 +77,7 @@ void AEAT9955::custom_method(const BusCLIArguments &cli){
 extern "C" int aeat9955_main(int argc, char *argv[]){
 	using ThisDriver = AEAT9955;
 	BusCLIArguments cli{false, true};
-	cli.default_spi_frequency = 2000000; // 1MHz
+	cli.default_spi_frequency = 2000000; // 2MHz
 
 	cli.spi_mode = SPIDEV_MODE1;
 
