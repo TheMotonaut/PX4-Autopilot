@@ -129,7 +129,7 @@ float AEAT9955::readAngle() {
 }
 
 void AEAT9955::RunImpl(){
-	//int32_t diffTime = hrt_elapsed_time(&_last_measurement_time);
+	int32_t diffTime = hrt_elapsed_time(&_last_measurement_time);
 	/*
 	if (diffTime < POLL_RATE / 2) {
 		PX4_ERR("AEAT9955 loop calld to early");
@@ -141,14 +141,26 @@ void AEAT9955::RunImpl(){
 
 	float angle = readAngle();
 
-	readStatus();
-	//float propeller_speed = (_last_angle_measurement - angle)/(_last_angle_measurement*1000000);
+	//readStatus();
 
-	_last_angle_measurement = 0;
+	if(diffTime == 0){
+		diffTime = 1264; // Guess diff time if to avoid devide by zero
+	}
+
+	float propeller_speed = (math::abs_t(angle - _last_angle_measurement));
+
+	if (propeller_speed >= 5.6549f) {
+		propeller_speed = math::abs_t(propeller_speed - 2.0f*3.14159f);
+	}
+
+	propeller_speed = propeller_speed/((float)diffTime/1e6f);
+
+
+	_last_angle_measurement = angle;
 
 	propellor_encoder_s propellor{};
 	propellor.timestamp = _last_measurement_time;
-	propellor.propellor_speed = 0.0;
+	propellor.propellor_speed = propeller_speed;
 	propellor.propellor_angle = angle;
 
 	_propellor_angle_pub.publish(propellor);

@@ -152,10 +152,17 @@ void ActuatorEffectivenessHelicopterSwashplateless::updateSetpoint(const matrix:
 	rpm_control_output = _rpm_control.getActuatorCorrection(propellor_data);
 #endif // CONTROL_ALLOCATOR_RPM_CONTROL
 
+<<<<<<< HEAD
 	const float AMP = _geometry.rpm_mod_amp;
 	float temp = AMP*cosf(propellor_data.propellor_angle);
 	float throttle = math::interpolateN(-control_sp(ControlAxis::THRUST_Z), _geometry.throttle_curve);
 	if(spoolup_progress > 0.75f){
+=======
+	const float AMP = 0.25;
+	float temp = AMP*sinf(propellor_data.propellor_angle);
+	float throttle = math::interpolateN(-control_sp(ControlAxis::THRUST_Z), _geometry.throttle_curve);
+	if(spoolup_progress > 0.8f){
+>>>>>>> 8be651352930d617af36cf8f7dd890beb79aae10
 		throttle = (throttle + rpm_control_output + temp) * spoolup_progress;
 	}else{
 		throttle = (throttle + rpm_control_output) * spoolup_progress;
