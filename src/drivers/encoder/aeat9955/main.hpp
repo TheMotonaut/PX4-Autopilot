@@ -62,6 +62,7 @@ class AEAT9955 : public I2CSPIDriver<AEAT9955> {
 
 		perf_counter_t _sample_perf;
 		perf_counter_t _errors;
+		perf_counter_t	_cycle_perf{perf_alloc(PC_ELAPSED, MODULE_NAME": cycle")};
 
 		bool ready0_flag;
 		bool ready1_flag;

@@ -792,6 +792,8 @@ int DShot::print_status()
 	perf_print_counter(_cycle_perf);
 	_mixing_output.printStatus();
 
+	print_run_status();
+
 	if (_telemetry) {
 		PX4_INFO("telemetry on: %s", _telemetry_device);
 		_telemetry->handler.printStatus();

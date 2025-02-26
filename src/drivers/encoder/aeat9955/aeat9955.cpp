@@ -24,6 +24,7 @@ AEAT9955::AEAT9955(device::Device *interface, const I2CSPIDriverConfig &config) 
 AEAT9955::~AEAT9955() {
 	perf_free(_sample_perf);
 	perf_free(_errors);
+	perf_free(_cycle_perf);
 
 	delete _interface;
 }
@@ -101,6 +102,9 @@ void AEAT9955::print_status(){
 	I2CSPIDriverBase::print_status();
 	perf_print_counter(_sample_perf);
 	perf_print_counter(_errors);
+	perf_print_counter(_cycle_perf);
+
+	print_run_status();
 
 	::printf("Ready 0: %u\n", ready0_flag);
 	::printf("Ready 1: %u\n", ready1_flag);
@@ -129,6 +133,7 @@ float AEAT9955::readAngle() {
 }
 
 void AEAT9955::RunImpl(){
+	perf_begin(_cycle_perf);
 	int32_t diffTime = hrt_elapsed_time(&_last_measurement_time);
 	/*
 	if (diffTime < POLL_RATE / 2) {
@@ -149,7 +154,7 @@ void AEAT9955::RunImpl(){
 
 	float propeller_speed = (math::abs_t(angle - _last_angle_measurement));
 
-	if (propeller_speed >= 5.6549f) {
+	if (propeller_speed >= 3.14159f) {
 		propeller_speed = math::abs_t(propeller_speed - 2.0f*3.14159f);
 	}
 
@@ -164,4 +169,5 @@ void AEAT9955::RunImpl(){
 	propellor.propellor_angle = angle;
 
 	_propellor_angle_pub.publish(propellor);
+	perf_end(_cycle_perf);
 }
