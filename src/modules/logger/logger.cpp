@@ -251,7 +251,7 @@ void Logger::print_statistics(LogType type)
 
 Logger *Logger::instantiate(int argc, char *argv[])
 {
-	uint32_t log_interval = 3500;
+	uint32_t log_interval = 500;
 	float rate_factor = 1.0f;
 	int log_buffer_size = 12 * 1024;
 	Logger::LogMode log_mode = Logger::LogMode::while_armed;

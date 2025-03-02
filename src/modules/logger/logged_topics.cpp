@@ -265,7 +265,7 @@ void LoggedTopics::add_high_rate_topics()
 {
 	// maximum rate to analyze fast maneuvers (e.g. for racing)
 	add_topic("propellor_encoder");
-	add_topic_multi("actuators_output");
+	add_topic("actuators_output");
 	add_topic("actuator_motors");
 	add_topic("manual_control_setpoint");
 	add_topic_multi("rate_ctrl_status", 20, 2);
@@ -274,7 +274,7 @@ void LoggedTopics::add_high_rate_topics()
 	add_topic("vehicle_attitude");
 	add_topic("vehicle_attitude_setpoint");
 	add_topic("vehicle_rates_setpoint");
-
+	add_topic("battery_status");
 	add_topic("esc_status", 5);
 	add_topic("actuator_outputs_debug");
 	add_topic("actuator_servos");
