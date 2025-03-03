@@ -825,7 +825,7 @@ int ControlAllocator::print_status()
 	// Print current airframe
 	if (_actuator_effectiveness != nullptr) {
 		PX4_INFO("Effectiveness Source: %s", _actuator_effectiveness->name());
-		PX4_INFO("Effectivness %li", _param_ca_airframe.get());
+		PX4_INFO("Effectivness %i", _param_ca_airframe.get());
 	}
 
 

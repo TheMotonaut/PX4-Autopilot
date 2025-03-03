@@ -156,14 +156,19 @@ void ActuatorEffectivenessHelicopterSwashplateless::updateSetpoint(const matrix:
 
 	float actuation_amp = sqrt(control_sp(ControlAxis::PITCH)*control_sp(ControlAxis::PITCH) + control_sp(ControlAxis::ROLL)*control_sp(ControlAxis::ROLL));
 
-	const float AMP = _geometry.rpm_mod_amp*actuation_amp;
+	float speed_compenstation = propellor_data.propellor_speed/300;
+
+	const float AMP = _geometry.rpm_mod_amp*actuation_amp*speed_compenstation;
 	float temp = AMP*cosf(propellor_data.propellor_angle + actuation_phase);
 	float throttle = math::interpolateN(-control_sp(ControlAxis::THRUST_Z), _geometry.throttle_curve);
-	if(spoolup_progress > 0.75f){
+
+	if(spoolup_progress >=){
 		throttle = (throttle + rpm_control_output + temp) * spoolup_progress;
 	}else{
 		throttle = (throttle + rpm_control_output) * spoolup_progress;
 	}
+
+	throttle = math::constrain(throttle, 0.0f, 1.0f);
 
 	// throttle/collective pitch curve
 	const float collective_pitch = math::interpolateN(-control_sp(ControlAxis::THRUST_Z), _geometry.pitch_curve);
@@ -174,6 +179,12 @@ void ActuatorEffectivenessHelicopterSwashplateless::updateSetpoint(const matrix:
 	actuator_sp(1) = control_sp(ControlAxis::YAW) * _geometry.yaw_sign
 			 + fabsf(collective_pitch - _geometry.yaw_collective_pitch_offset) * _geometry.yaw_collective_pitch_scale
 			 + throttle * _geometry.yaw_throttle_scale;
+
+	if(actuator_sp(0) < actuator_min(0)){
+		setSaturationFlag(0.0f, _saturation_flags.thrust_neg, _saturation_flags.thrust_pos);
+	} else if(actuator_sp(0) > actuator_max(0)){
+		setSaturationFlag(0.0f, _saturation_flags.thrust_pos, _saturation_flags.thrust_neg);
+	}
 
 	// Saturation check for yaw
 	if (actuator_sp(1) < actuator_min(1)) {
