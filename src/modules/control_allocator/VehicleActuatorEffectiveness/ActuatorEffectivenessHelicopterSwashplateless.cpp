@@ -120,15 +120,6 @@ bool ActuatorEffectivenessHelicopterSwashplateless::getEffectivenessMatrix(Confi
 	// Tail (yaw) (either ESC or Servo)
 	configuration.addActuator(_tail_actuator_type, Vector3f{}, Vector3f{});
 
-	/*
-	// N swash plate servos
-	_first_swash_plate_servo_index = configuration.num_actuators_matrix[0];
-
-	for (int i = 0; i < _geometry.num_swash_plate_servos; ++i) {
-		configuration.addActuator(ActuatorType::SERVOS, Vector3f{}, Vector3f{});
-		configuration.trim[configuration.selected_matrix](i) = _geometry.swash_plate_servos[i].trim;
-	}
-	*/
 	return true;
 }
 
@@ -154,36 +145,43 @@ void ActuatorEffectivenessHelicopterSwashplateless::updateSetpoint(const matrix:
 
 	float actuation_phase = atan2(control_sp(ControlAxis::PITCH), control_sp(ControlAxis::ROLL));
 
-	float actuation_amp = sqrt(control_sp(ControlAxis::PITCH)*control_sp(ControlAxis::PITCH) + control_sp(ControlAxis::ROLL)*control_sp(ControlAxis::ROLL));
+	float actuation_amp = sqrt(control_sp(ControlAxis::PITCH)*control_sp(ControlAxis::PITCH)
+				+ control_sp(ControlAxis::ROLL)*control_sp(ControlAxis::ROLL));
 
-	float speed_compenstation = propellor_data.propellor_speed/300;
+	float speed_compenstation = control_sp(ControlAxis::THRUST_Z);
 
-	const float AMP = _geometry.rpm_mod_amp*actuation_amp*speed_compenstation;
-	float temp = AMP*cosf(propellor_data.propellor_angle + actuation_phase);
+	const float amplitude = _geometry.rpm_mod_amp*actuation_amp*speed_compenstation;
+	float modulation = amplitude*cosf(propellor_data.propellor_angle + actuation_phase);
 	float throttle = math::interpolateN(-control_sp(ControlAxis::THRUST_Z), _geometry.throttle_curve);
 
-	if(spoolup_progress >=){
-		throttle = (throttle + rpm_control_output + temp) * spoolup_progress;
+	if(spoolup_progress >= 0.97f){
+		throttle = (throttle + rpm_control_output + modulation) * spoolup_progress;
 	}else{
 		throttle = (throttle + rpm_control_output) * spoolup_progress;
 	}
 
-	throttle = math::constrain(throttle, 0.0f, 1.0f);
-
-	// throttle/collective pitch curve
-	const float collective_pitch = math::interpolateN(-control_sp(ControlAxis::THRUST_Z), _geometry.pitch_curve);
+	//throttle = math::constrain(throttle, 0.0f, 1.0f);
 
 	// actuator mapping
 	actuator_sp(0) = mainMotorEnaged() ? throttle : NAN;
 
 	actuator_sp(1) = control_sp(ControlAxis::YAW) * _geometry.yaw_sign
-			 + fabsf(collective_pitch - _geometry.yaw_collective_pitch_offset) * _geometry.yaw_collective_pitch_scale
 			 + throttle * _geometry.yaw_throttle_scale;
 
 	if(actuator_sp(0) < actuator_min(0)){
 		setSaturationFlag(0.0f, _saturation_flags.thrust_neg, _saturation_flags.thrust_pos);
 	} else if(actuator_sp(0) > actuator_max(0)){
 		setSaturationFlag(0.0f, _saturation_flags.thrust_pos, _saturation_flags.thrust_neg);
+	}
+
+	// Roll and pitch saturation
+
+	if(throttle - amplitude < actuator_min(0)){
+		setSaturationFlag(1.0f, _saturation_flags.roll_pos, _saturation_flags.roll_neg);
+		setSaturationFlag(1.0f, _saturation_flags.pitch_neg, _saturation_flags.pitch_pos);
+	} else if(throttle + amplitude > actuator_max(0)){
+		setSaturationFlag(1.0f, _saturation_flags.roll_neg, _saturation_flags.roll_pos);
+		setSaturationFlag(1.0f, _saturation_flags.pitch_pos, _saturation_flags.pitch_neg);
 	}
 
 	// Saturation check for yaw
@@ -193,26 +191,6 @@ void ActuatorEffectivenessHelicopterSwashplateless::updateSetpoint(const matrix:
 	} else if (actuator_sp(1) > actuator_max(1)) {
 		setSaturationFlag(_geometry.yaw_sign, _saturation_flags.yaw_pos, _saturation_flags.yaw_neg);
 	}
-	/*
-	for (int i = 0; i < _geometry.num_swash_plate_servos; i++) {
-		float roll_coeff = sinf(_geometry.swash_plate_servos[i].angle) * _geometry.swash_plate_servos[i].arm_length;
-		float pitch_coeff = cosf(_geometry.swash_plate_servos[i].angle) * _geometry.swash_plate_servos[i].arm_length;
-		actuator_sp(_first_swash_plate_servo_index + i) = collective_pitch
-				+ control_sp(ControlAxis::PITCH) * pitch_coeff
-				- control_sp(ControlAxis::ROLL) * roll_coeff
-				+ _geometry.swash_plate_servos[i].trim;
-
-		// Saturation check for roll & pitch
-		if (actuator_sp(_first_swash_plate_servo_index + i) < actuator_min(_first_swash_plate_servo_index + i)) {
-			setSaturationFlag(roll_coeff, _saturation_flags.roll_pos, _saturation_flags.roll_neg);
-			setSaturationFlag(pitch_coeff, _saturation_flags.pitch_neg, _saturation_flags.pitch_pos);
-
-		} else if (actuator_sp(_first_swash_plate_servo_index + i) > actuator_max(_first_swash_plate_servo_index + i)) {
-			setSaturationFlag(roll_coeff, _saturation_flags.roll_neg, _saturation_flags.roll_pos);
-			setSaturationFlag(pitch_coeff, _saturation_flags.pitch_pos, _saturation_flags.pitch_neg);
-		}
-	}
-	*/
 }
 
 bool ActuatorEffectivenessHelicopterSwashplateless::mainMotorEnaged()

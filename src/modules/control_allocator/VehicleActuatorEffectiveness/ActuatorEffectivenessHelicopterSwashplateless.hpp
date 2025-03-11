@@ -44,7 +44,7 @@
 
 #include "RpmControl.hpp"
 
-#define CONTROL_ALLOCATOR_RPM_CONTROL true
+#define CONTROL_ALLOCATOR_RPM_CONTROL false
 
 class ActuatorEffectivenessHelicopterSwashplateless : public ModuleParams, public ActuatorEffectiveness
 {
