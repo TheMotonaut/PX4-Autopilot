@@ -148,22 +148,25 @@ void ActuatorEffectivenessHelicopterSwashplateless::updateSetpoint(const matrix:
 	float actuation_amp = sqrt(control_sp(ControlAxis::PITCH)*control_sp(ControlAxis::PITCH)
 				+ control_sp(ControlAxis::ROLL)*control_sp(ControlAxis::ROLL));
 
-	float speed_compenstation = control_sp(ControlAxis::THRUST_Z);
+	//float speed_compensation = sqrt(control_sp(ControlAxis::THRUST_Z)*control_sp(ControlAxis::THRUST_Z));
+	//float speed_compensation = 1;
+	float speed_compensation = -control_sp(ControlAxis::THRUST_Z);
 
-	const float amplitude = _geometry.rpm_mod_amp*actuation_amp*speed_compenstation;
+	const float amplitude = _geometry.rpm_mod_amp*actuation_amp*speed_compensation;
 	float modulation = amplitude*cosf(propellor_data.propellor_angle + actuation_phase);
 	float throttle = math::interpolateN(-control_sp(ControlAxis::THRUST_Z), _geometry.throttle_curve);
+	float total_throttle = 0;
 
-	if(spoolup_progress >= 0.97f){
-		throttle = (throttle + rpm_control_output + modulation) * spoolup_progress;
+	if(spoolup_progress < 1.0f){
+		total_throttle = (throttle + rpm_control_output) * spoolup_progress;
 	}else{
-		throttle = (throttle + rpm_control_output) * spoolup_progress;
+		total_throttle = (throttle + rpm_control_output + modulation) * spoolup_progress;
 	}
 
 	//throttle = math::constrain(throttle, 0.0f, 1.0f);
 
 	// actuator mapping
-	actuator_sp(0) = mainMotorEnaged() ? throttle : NAN;
+	actuator_sp(0) = mainMotorEnaged() ? total_throttle : NAN;
 
 	actuator_sp(1) = control_sp(ControlAxis::YAW) * _geometry.yaw_sign
 			 + throttle * _geometry.yaw_throttle_scale;
