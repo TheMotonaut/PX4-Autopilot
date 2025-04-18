@@ -105,7 +105,7 @@ int LOADCELL::init(){
 }
 void LOADCELL::start() {
 	// schedule a cycle to start things (the sensor sends at 100Hz, but we run a bit faster to avoid missing data)
-	ScheduleOnInterval(7_ms);
+	ScheduleOnInterval(50_ms);
 
 	_loadcell_pub.advertise();
 }
@@ -147,10 +147,11 @@ int LOADCELL::collect() {
 
 	char readbuf[sizeof(_linebuf)] {};
 
-	unsigned readlen = sizeof(readbuf) - 1;
+	unsigned readlen = sizeof(readbuf);
 
 	int ret = 0;
-	int measurement = -404;
+	int measurement1 = -404;
+	int measurement2 = -404;
 
 	int bytes_available = 0;
 	::ioctl(_fd, FIONREAD, (unsigned long)&bytes_available);
@@ -169,7 +170,9 @@ int LOADCELL::collect() {
 
 		bajs++;
 
-		if (ret < 0) {
+		bajs3 = ret;
+
+		if (ret < 4) {
 			perf_count(_comms_errors);
 			perf_end(_sample_perf);
 
@@ -184,28 +187,26 @@ int LOADCELL::collect() {
 			}
 		}
 
+		tcflush(_fd, TCIFLUSH);
+
 		bajs2++;
 
 		_last_read = hrt_absolute_time();
 
-		for (int i = 0; i < ret; i++) {
-			if (i > 5){
-				tcflush(_fd, TCIFLUSH);
-				return -EAGAIN;
-			}
-			if(readbuf[i] == 0xFF) {
-				measurement = readbuf[i + 1] << 0 |readbuf[i + 2] << 8 | readbuf[i + 3] << 16 | readbuf[i + 4] << 24;
-			}
-		}
+		measurement1 = readbuf[0] << 0 | readbuf[1] << 8 | readbuf[2] << 16 | readbuf[3] << 24;
+		measurement2 = readbuf[4] << 0 | readbuf[5] << 8 | readbuf[6] << 16 | readbuf[7] << 24;
+
 
 		bytes_available -= ret;
+
 	} while (bytes_available > 0);
 
-	bajs3++;
+	//bajs3++;
 
 	loadcell_s measurement_msg{};
 	measurement_msg.timestamp = timestamp_sample;
-	measurement_msg.value = measurement;
+	measurement_msg.value1 = measurement1;
+	measurement_msg.value2 = measurement2;
 
 	_loadcell_pub.publish(measurement_msg);
 

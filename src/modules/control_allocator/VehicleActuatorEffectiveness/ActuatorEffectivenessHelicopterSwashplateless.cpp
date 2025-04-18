@@ -67,6 +67,7 @@ ActuatorEffectivenessHelicopterSwashplateless::ActuatorEffectivenessHelicopterSw
 	_param_handles.yaw_ccw = param_find("CA_HELI_YAW_CCW");
 	_param_handles.spoolup_time = param_find("COM_SPOOLUP_TIME");
 	_param_handles.rpm_mod_amp = param_find("RPM_MOD_AMP");
+	_param_handles.speed_comp = param_find("SPEED_COMP");
 
 	updateParams();
 }
@@ -105,6 +106,7 @@ void ActuatorEffectivenessHelicopterSwashplateless::updateParams()
 	param_get(_param_handles.yaw_ccw, &yaw_ccw);
 	_geometry.yaw_sign = (yaw_ccw == 1) ? -1.f : 1.f;
 	param_get(_param_handles.rpm_mod_amp, &_geometry.rpm_mod_amp);
+	param_get(_param_handles.speed_comp, &_geometry.speed_comp);
 }
 
 bool ActuatorEffectivenessHelicopterSwashplateless::getEffectivenessMatrix(Configuration &configuration,
@@ -134,9 +136,11 @@ void ActuatorEffectivenessHelicopterSwashplateless::updateSetpoint(const matrix:
 
 	propellor_encoder_s propellor_data;
 
-	if (_propeller_position_sub.updated()){
+	/*if (_propeller_position_sub.updated()){
 		_propeller_position_sub.copy(&propellor_data);
-	}
+	}*/
+
+	_propeller_position_sub.update(&propellor_data);
 
 #if CONTROL_ALLOCATOR_RPM_CONTROL
 	_rpm_control.setSpoolupProgress(spoolup_progress);
@@ -150,10 +154,14 @@ void ActuatorEffectivenessHelicopterSwashplateless::updateSetpoint(const matrix:
 
 	//float speed_compensation = sqrt(control_sp(ControlAxis::THRUST_Z)*control_sp(ControlAxis::THRUST_Z));
 	//float speed_compensation = 1;
-	float speed_compensation = -control_sp(ControlAxis::THRUST_Z);
+	float speed_compensation = 0.5;
+
+	if(_geometry.speed_comp){
+		speed_compensation = -control_sp(ControlAxis::THRUST_Z);
+	}
 
 	const float amplitude = _geometry.rpm_mod_amp*actuation_amp*speed_compensation;
-	float modulation = amplitude*cosf(propellor_data.propellor_angle + actuation_phase);
+	float modulation = amplitude*cosf(propellor_data.propellor_angle + actuation_phase - 0.78188f);
 	float throttle = math::interpolateN(-control_sp(ControlAxis::THRUST_Z), _geometry.throttle_curve);
 	float total_throttle = 0;
 

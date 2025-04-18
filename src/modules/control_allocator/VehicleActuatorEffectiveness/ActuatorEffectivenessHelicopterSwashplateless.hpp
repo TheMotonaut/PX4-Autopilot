@@ -67,6 +67,7 @@ public:
 		float yaw_sign;
 		float spoolup_time;
 		float rpm_mod_amp;
+		int32_t speed_comp;
 	};
 
 	ActuatorEffectivenessHelicopterSwashplateless(ModuleParams *parent, ActuatorType tail_actuator_type);
@@ -116,6 +117,7 @@ private:
 		param_t yaw_ccw;
 		param_t spoolup_time;
 		param_t rpm_mod_amp;
+		param_t speed_comp;
 	};
 	ParamHandles _param_handles{};
 

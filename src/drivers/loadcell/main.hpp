@@ -43,7 +43,7 @@ class LOADCELL : public  px4::ScheduledWorkItem {
 
 		uORB::Publication<loadcell_s> _loadcell_pub{ORB_ID(loadcell)};
 
-		char _linebuf[10] {};
+		char _linebuf[8] {};
 		char _port[20] {};
 
 		int _fd{-1};

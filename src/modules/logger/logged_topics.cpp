@@ -264,20 +264,22 @@ void LoggedTopics::add_default_topics()
 void LoggedTopics::add_high_rate_topics()
 {
 	// maximum rate to analyze fast maneuvers (e.g. for racing)
+	add_topic("loadcell");
 	add_topic("propellor_encoder");
 	add_topic("actuators_output");
 	add_topic("actuator_motors");
 	add_topic("manual_control_setpoint");
-	add_topic_multi("rate_ctrl_status", 20, 2);
-	add_topic("sensor_combined");
-	add_topic("vehicle_angular_velocity");
-	add_topic("vehicle_attitude");
-	add_topic("vehicle_attitude_setpoint");
-	add_topic("vehicle_rates_setpoint");
+	add_topic("control_allocator_status");
+	//add_topic_multi("rate_ctrl_status", 20, 2);
+	//add_topic("sensor_combined");
+	//add_topic("vehicle_angular_velocity");
+	//add_topic("vehicle_attitude");
+	//add_topic("vehicle_attitude_setpoint");
+	//add_topic("vehicle_rates_setpoint");
 	add_topic("battery_status");
 	add_topic("esc_status", 5);
 	add_topic("actuator_outputs_debug");
-	add_topic("actuator_servos");
+	//add_topic("actuator_servos");
 	add_topic_multi("vehicle_thrust_setpoint", 0, 2);
 	add_topic_multi("vehicle_torque_setpoint", 0, 2);
 }

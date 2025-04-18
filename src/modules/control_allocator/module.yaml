@@ -541,8 +541,15 @@ parameters:
               which is mostly the case when the main rotor turns counter-clockwise.
           type: float
           min: 0.0
-          max: 0.25
-          default: 0.05
+          max: 1.0
+          default: 0.3
+        SPEED_COMP:
+          description:
+            short: Speed compensation
+            long: |
+              Enables a linear speed compensation taken from the current requested thrust value
+          type: boolean
+          default: 1
         CA_HELI_RPM_SP:
           description:
             short: Setpoint for main rotor rpm
@@ -1237,3 +1244,5 @@ mixer:
                         name: COM_SPOOLUP_TIME
                       - label: 'RPM Modulation Amplitude'
                         name: RPM_MOD_AMP
+                      - label: 'Speed compensation'
+                        name: SPEED_COMP
