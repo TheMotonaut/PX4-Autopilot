@@ -696,7 +696,7 @@ __EXPORT int board_app_initialize(uintptr_t arg)
 	 */
 
 	px4_arch_configgpio(GPIO_LPUART4_CTS);
-	px4_arch_configgpio(GPIO_LPUART8_CTS);
+	//px4_arch_configgpio(GPIO_LPUART8_CTS);
 	px4_arch_configgpio(GPIO_LPUART10_CTS);
 
 	/* Do the I2C init late BOARD_I2C_LATEINIT */
