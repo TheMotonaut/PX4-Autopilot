@@ -1,0 +1,34 @@
+module_name: flexio_osd
+
+parameters:
+    - group: OSD
+      definitions:
+        OSD_FLX_STD:
+            description:
+                short: FlexIO OSD video standard
+                long: "Auto: timing follows the number of lines per field of the received video."
+            type: enum
+            values:
+                0: Auto
+                1: PAL
+                2: NTSC
+            default: 0
+        OSD_FLX_H_OFS:
+            description:
+                short: FlexIO OSD horizontal offset
+                long: Moves the overlay to the right, negative values move it to the left.
+            type: float
+            unit: us
+            min: -5
+            max: 5
+            decimal: 2
+            increment: 0.05
+            default: 0
+        OSD_FLX_V_OFS:
+            description:
+                short: FlexIO OSD vertical offset
+                long: Moves the overlay down by video lines, negative values move it up.
+            type: int32
+            min: -15
+            max: 30
+            default: 0
